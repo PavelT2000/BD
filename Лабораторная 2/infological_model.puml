@@ -1,0 +1,202 @@
+@startuml infological_model
+!pragma layout smetana
+skinparam dpi 200
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontName "Segoe UI"
+skinparam classFontStyle bold
+skinparam classBackgroundColor #FFFFFF
+skinparam classHeaderBackgroundColor #DFE9DF
+skinparam classBorderColor #333333
+skinparam ArrowColor #555555
+skinparam linetype ortho
+hide circle
+hide methods
+hide stereotype
+
+title Инфологическая модель БД «Фирма по обслуживанию и ремонту компьютеров»
+
+class "clients\nКлиенты" as clients {
+  PK id
+  client_type
+  full_name
+  U unp
+  contact_person
+  phone
+  email
+  address
+  registered_at
+}
+
+class "positions\nДолжности" as positions {
+  PK id
+  U name
+}
+
+class "employees\nСотрудники" as employees {
+  PK id
+  FK position_id
+  last_name
+  first_name
+  middle_name
+  phone
+  email
+  hired_at
+  dismissed_at
+}
+
+class "device_types\nТипы устройств" as device_types {
+  PK id
+  U name
+}
+
+class "manufacturers\nПроизводители" as manufacturers {
+  PK id
+  U name
+}
+
+class "devices\nУстройства" as devices {
+  PK id
+  FK client_id
+  FK device_type_id
+  FK manufacturer_id
+  model
+  serial_number
+}
+
+class "repair_orders\nЗаказы на ремонт" as repair_orders {
+  PK id
+  U order_no
+  FK device_id
+  FK receiver_id
+  FK engineer_id
+  FK warranty_order_id
+  received_at
+  problem_description
+  equipment
+  appearance
+  diagnosis
+  estimated_cost
+  approved_at
+  due_date
+}
+
+class "order_statuses\nСтатусы заказа" as order_statuses {
+  PK id
+  U name
+  is_final
+}
+
+class "order_status_history\nИстория статусов заказа" as order_status_history {
+  PK id
+  FK repair_order_id
+  FK status_id
+  FK employee_id
+  changed_at
+  comment
+}
+
+class "services\nУслуги" as services {
+  PK id
+  U name
+  price
+  standard_minutes
+  warranty_days
+}
+
+class "order_services\nРаботы по заказу" as order_services {
+  PK id
+  FK repair_order_id
+  FK service_id
+  FK engineer_id
+  quantity
+  price
+  performed_at
+}
+
+class "parts\nЗапчасти" as parts {
+  PK id
+  U article
+  FK manufacturer_id
+  name
+  sale_price
+  warranty_days
+}
+
+class "order_parts\nЗапчасти по заказу" as order_parts {
+  PK id
+  FK repair_order_id
+  FK part_id
+  quantity
+  price
+}
+
+class "suppliers\nПоставщики" as suppliers {
+  PK id
+  name
+  U unp
+  phone
+  email
+  address
+}
+
+class "supplies\nПоставки" as supplies {
+  PK id
+  FK supplier_id
+  FK employee_id
+  invoice_no
+  supplied_at
+}
+
+class "supply_items\nПозиции поставки" as supply_items {
+  PK id
+  FK supply_id
+  FK part_id
+  quantity
+  purchase_price
+}
+
+class "payments\nОплаты" as payments {
+  PK id
+  FK repair_order_id
+  FK employee_id
+  amount
+  payment_method
+  paid_at
+}
+
+' --- клиенты и устройства
+clients "1" -- "0..*" devices : владеет >
+device_types "1" -- "0..*" devices
+manufacturers "1" -- "0..*" devices
+manufacturers "1" -- "0..*" parts
+
+' --- заказ
+devices "1" -- "0..*" repair_orders : сдаётся в ремонт >
+employees "1" -- "0..*" repair_orders : принимает >
+employees "0..1" -- "0..*" repair_orders : ремонтирует >
+repair_orders "0..1" -- "0..*" repair_orders : гарантия по >
+positions "1" -- "0..*" employees
+
+' --- статусы
+repair_orders "1" *-- "1..*" order_status_history
+order_statuses "1" -- "0..*" order_status_history
+employees "1" -- "0..*" order_status_history
+
+' --- работы и запчасти
+repair_orders "1" *-- "0..*" order_services
+services "1" -- "0..*" order_services
+employees "1" -- "0..*" order_services
+repair_orders "1" *-- "0..*" order_parts
+parts "1" -- "0..*" order_parts
+
+' --- склад
+suppliers "1" -- "0..*" supplies
+employees "1" -- "0..*" supplies
+supplies "1" *-- "1..*" supply_items
+parts "1" -- "0..*" supply_items
+
+' --- оплаты
+repair_orders "1" *-- "0..*" payments
+employees "1" -- "0..*" payments
+@enduml
